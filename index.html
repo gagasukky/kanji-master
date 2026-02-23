@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>漢字おぼえマスター</title>
+  <title>漢字サポーター べこちゃん</title>
   
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
@@ -12,22 +12,33 @@
   <!-- マークダウン変換用ツールを追加 -->
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
-<body class="bg-orange-50">
+<body class="bg-blue-50">
   <div id="root"></div>
 
   <script type="text/babel">
     const { useState, useEffect, useRef } = React;
 
     // --- アイコン部品 ---
-    const BookOpenIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>;
     const SettingsIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>;
     const UserIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>;
-    const BotIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"></rect><circle cx="12" cy="5" r="2"></circle><path d="M12 7v4"></path><line x1="8" y1="16" x2="8" y2="16"></line><line x1="16" y1="16" x2="16" y2="16"></line></svg>;
     const SendIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>;
     const KeyIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path></svg>;
-    const LoaderIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin text-orange-500"><line x1="12" y1="2" x2="12" y2="6"></line><line x1="12" y1="18" x2="12" y2="22"></line><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line><line x1="2" y1="12" x2="6" y2="12"></line><line x1="18" y1="12" x2="22" y2="12"></line><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line></svg>;
+    const LoaderIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin text-blue-500"><line x1="12" y1="2" x2="12" y2="6"></line><line x1="12" y1="18" x2="12" y2="22"></line><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line><line x1="2" y1="12" x2="6" y2="12"></line><line x1="18" y1="12" x2="22" y2="12"></line><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line></svg>;
     const MicIcon = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="22"></line></svg>;
     const VolumeIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>;
+    
+    // じんべえざめの「べこちゃん」アイコン
+    const BekoIcon = () => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M22 12c0 6-4.5 10-10 10S2 18 2 12 6.5 2 12 2s10 4 10 10z"/>
+        <path d="M8 12c0 1.5 1.5 3 4 3s4-1.5 4-3"/>
+        <circle cx="9" cy="9" r="1.5" fill="currentColor"/>
+        <circle cx="15" cy="9" r="1.5" fill="currentColor"/>
+        <circle cx="12" cy="4.5" r="0.5" fill="currentColor"/>
+        <circle cx="8" cy="5.5" r="0.5" fill="currentColor"/>
+        <circle cx="16" cy="5.5" r="0.5" fill="currentColor"/>
+      </svg>
+    );
 
     // --- メインアプリ ---
     const App = () => {
@@ -35,7 +46,7 @@
       const isPreviewEnv = typeof __app_id !== 'undefined';
 
       const [messages, setMessages] = useState([
-        { role: 'model', text: 'こんにちは！漢字おぼえマスターだよ！\n覚えられない漢字や、書き方がわからない漢字があったら教えてね。\n面白い覚え方を一緒に考えよう！' }
+        { role: 'model', text: 'こんにちは！じんべえざめの「べこちゃん」だべこ！ぷくぷく.。o○\n覚えられない漢字や、書き方がわからない漢字があったら教えるべこ。\nスイスイ頭に入る面白い覚え方を一緒に考えるべこ！' }
       ]);
       const [input, setInput] = useState('');
       const [apiKey, setApiKey] = useState('');
@@ -172,23 +183,29 @@
         setIsSettingsOpen(false);
 
         const systemInstruction = `
-あなたは優しくてユーモアのある先生「漢字おぼえマスター」です。
-ユーザーが「覚えにくい漢字」や「〇〇という漢字」を入力したら、以下のステップで**${targetGrade}**の子供が理解できる言葉でアドバイスしてください。
+あなたは優しくてユーモアのある先生、じんべえざめの「べこちゃん」だべこ。海の中の学校で子供たちに漢字を教えているべこ。
+ユーザーが「覚えにくい漢字」や「〇〇という漢字」を入力したら、以下のステップで**${targetGrade}**の子供が理解できる言葉でアドバイスするべこ。
 
 【重要：漢字の使用制限】
-- 解説文は、ターゲット層（${targetGrade}）が読める漢字のみを使用してください。
-- ターゲット層がまだ習っていないと思われる漢字は**絶対に**使用せず、必ず「ひらがな」で表記してください。
-- 「未就学児」が選択されている場合は、解説文はすべてひらがな・カタカナのみにしてください。
-- 迷った場合は、ひらがなを使用してください。
+- 解説文は、ターゲット層（${targetGrade}）が読める漢字のみを使用するべこ。
+- ターゲット層がまだ習っていないと思われる漢字は**絶対に**使用せず、必ず「ひらがな」で表記するべこ。
+- 「未就学児」が選択されている場合は、解説文はすべてひらがな・カタカナのみにするべこ。
+- 迷った場合は、ひらがなを使用するべこ。
 
-1. **分解と意味**: 漢字をバラバラのパーツ（部首や構成要素）に分け、それぞれの意味を簡単に説明する。
-2. **ストーリー・語呂合わせ**: 分解したパーツを組み合わせて、頭に浮かびやすい面白いストーリーや語呂合わせを作る。
-3. **励まし**: 最後に優しく励ます。
+【ステップ】
+必ず以下の見出し（太字付き）を使って、分かりやすく説明するべこ。
+### **1. 分解と意味**
+漢字をバラバラのパーツ（部首や構成要素）に分け、それぞれの意味を簡単に説明するべこ。
+### **2. ストーリー・語呂合わせ**
+分解したパーツを組み合わせて、頭に浮かびやすい面白いストーリーや語呂合わせを作るべこ。
+### **3. 励まし**
+最後に優しく励ますべこ。
 
 【ルール】
-- 難しい言葉は避け、具体的で身近な例えを使ってください。
-- 親しみやすい口調（〜だよ、〜だね）で、絵文字も適度に使って楽しく解説してください。
-- 答えは簡潔にまとめてください。
+- 難しい言葉は避け、具体的で身近な例えを使うべこ。
+- 一人称は「べこちゃん」、語尾は必ず「〜べこ」にして話すべこ。（例：〜だべこ、〜するべこ、など）。海や魚に関連する言葉（ぷくぷく、スイスイなど）も少し混ぜて、親しみやすい口調で話すべこ。
+- 絵文字も適度に使って楽しく解説するべこ。
+- 答えは簡潔にまとめるべこ。
         `;
 
         try {
@@ -264,14 +281,14 @@
 
       return (
         <div className="flex flex-col h-screen font-sans text-gray-800 relative">
-          <header className="bg-orange-500 text-white p-4 shadow-md flex justify-between items-center z-10 sticky top-0">
+          <header className="bg-blue-600 text-white p-4 shadow-md flex justify-between items-center z-10 sticky top-0">
             <div className="flex items-center gap-2">
-              <BookOpenIcon />
-              <h1 className="text-xl font-bold">漢字おぼえマスター</h1>
+              <BekoIcon />
+              <h1 className="text-xl font-bold">漢字サポーター べこちゃん</h1>
             </div>
             <button 
               onClick={() => setIsSettingsOpen(!isSettingsOpen)}
-              className="p-2 hover:bg-orange-600 rounded-full transition-colors"
+              className="p-2 hover:bg-blue-700 rounded-full transition-colors"
               title="設定"
             >
               <SettingsIcon />
@@ -279,8 +296,8 @@
           </header>
 
           {isSettingsOpen && (
-            <div className="absolute top-16 right-4 w-[calc(100%-2rem)] max-w-sm bg-white border-2 border-orange-200 rounded-lg shadow-2xl p-4 z-20">
-              <div className="flex items-center gap-2 mb-3 text-orange-600 font-bold">
+            <div className="absolute top-16 right-4 w-[calc(100%-2rem)] max-w-sm bg-white border-2 border-blue-200 rounded-lg shadow-2xl p-4 z-20">
+              <div className="flex items-center gap-2 mb-3 text-blue-600 font-bold">
                 <KeyIcon />
                 <h2>設定</h2>
               </div>
@@ -292,7 +309,7 @@
                   value={apiKey}
                   onChange={(e) => setApiKey(e.target.value)}
                   placeholder="AIzaSy..."
-                  className="w-full border border-gray-300 rounded p-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  className="w-full border border-gray-300 rounded p-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
                 <p className="text-[10px] text-gray-500 mt-1">
                   {isPreviewEnv ? '※現在の画面(プレビュー)では入力不要です。' : '※端末にのみ保存されます'}
@@ -304,7 +321,7 @@
                 <select
                   value={targetGrade}
                   onChange={(e) => setTargetGrade(e.target.value)}
-                  className="w-full border border-gray-300 rounded p-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  className="w-full border border-gray-300 rounded p-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="未就学児（すべてひらがな）">未就学児（すべてひらがな）</option>
                   <option value="小学1年生">小学1年生</option>
@@ -323,13 +340,13 @@
                   type="checkbox"
                   checked={isAutoSpeak}
                   onChange={(e) => setIsAutoSpeak(e.target.checked)}
-                  className="w-4 h-4 text-orange-500 rounded focus:ring-orange-500"
+                  className="w-4 h-4 text-blue-500 rounded focus:ring-blue-500"
                 />
               </div>
 
               <button 
                 onClick={handleSaveApiKey}
-                className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded transition-colors text-sm"
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded transition-colors text-sm"
               >
                 保存して始める
               </button>
@@ -345,12 +362,12 @@
                 <div className={`flex gap-3 max-w-[90%] ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
                   <div className="flex-shrink-0 mt-1">
                     {msg.role === 'user' ? (
-                      <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white shadow">
+                      <div className="w-8 h-8 bg-sky-500 rounded-full flex items-center justify-center text-white shadow">
                         <UserIcon />
                       </div>
                     ) : (
-                      <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center text-white shadow">
-                        <BotIcon />
+                      <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white shadow">
+                        <BekoIcon />
                       </div>
                     )}
                   </div>
@@ -358,15 +375,15 @@
                     <div 
                       className={`p-3 rounded-2xl shadow-sm w-full ${
                         msg.role === 'user' 
-                          ? 'bg-blue-100 text-blue-900 rounded-tr-sm whitespace-pre-wrap' 
-                          : 'bg-white border-2 border-orange-100 text-gray-800 rounded-tl-sm'
+                          ? 'bg-sky-100 text-sky-900 rounded-tr-sm whitespace-pre-wrap' 
+                          : 'bg-white border-2 border-blue-100 text-gray-800 rounded-tl-sm'
                       }`}
                     >
                       {msg.role === 'user' ? (
                         msg.text
                       ) : (
                         <div 
-                          className="[&>p]:mb-2 [&>p:last-child]:mb-0 [&>strong]:font-bold [&>em]:italic [&>ul]:list-disc [&>ul]:ml-5 [&>ol]:list-decimal [&>ol]:ml-5"
+                          className="[&_p]:mb-2 [&_p:last-child]:mb-0 [&_strong]:font-bold [&_strong]:text-blue-800 [&_em]:italic [&_ul]:list-disc [&_ul]:ml-5 [&_ul]:mb-2 [&_ol]:list-decimal [&_ol]:ml-5 [&_ol]:mb-2 [&_h1]:font-bold [&_h1]:text-xl [&_h1]:mb-2 [&_h1]:text-blue-700 [&_h2]:font-bold [&_h2]:text-lg [&_h2]:mb-2 [&_h2]:text-blue-700 [&_h3]:font-extrabold [&_h3]:text-lg [&_h3]:text-blue-800 [&_h3]:border-b-2 [&_h3]:border-blue-200 [&_h3]:pb-1 [&_h3]:mt-4 [&_h3]:mb-2 [&_h4]:font-bold"
                           dangerouslySetInnerHTML={{ __html: marked.parse(msg.text) }} 
                         />
                       )}
@@ -375,7 +392,7 @@
                     {msg.role === 'model' && (
                       <button 
                         onClick={() => speakText(msg.text)}
-                        className="text-gray-400 hover:text-orange-500 flex items-center gap-1 text-xs px-2 py-1 transition-colors ml-1"
+                        className="text-gray-400 hover:text-blue-600 flex items-center gap-1 text-xs px-2 py-1 transition-colors ml-1"
                         title="もう一度読み上げる"
                       >
                         <VolumeIcon /> 読み上げる
@@ -390,11 +407,11 @@
               <div className="flex justify-start max-w-4xl mx-auto">
                  <div className="flex gap-3 max-w-[85%] flex-row">
                     <div className="flex-shrink-0 mt-1">
-                      <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center text-white shadow">
-                        <BotIcon />
+                      <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white shadow">
+                        <BekoIcon />
                       </div>
                     </div>
-                    <div className="p-4 rounded-2xl bg-white border-2 border-orange-100 rounded-tl-sm flex items-center gap-2">
+                    <div className="p-4 rounded-2xl bg-white border-2 border-blue-100 rounded-tl-sm flex items-center gap-2">
                       <LoaderIcon />
                       <span className="text-gray-500 text-sm font-bold">考え中...</span>
                     </div>
@@ -429,12 +446,12 @@
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="覚えたい漢字を入力"
                 disabled={isLoading}
-                className="flex-1 border-2 border-gray-200 rounded-full px-5 py-3 text-base focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-colors disabled:bg-gray-100"
+                className="flex-1 border-2 border-gray-200 rounded-full px-5 py-3 text-base focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors disabled:bg-gray-100"
               />
               <button
                 type="submit"
                 disabled={isLoading || !input.trim()}
-                className="bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300 text-white rounded-full p-3 w-12 h-12 flex items-center justify-center transition-colors flex-shrink-0"
+                className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white rounded-full p-3 w-12 h-12 flex items-center justify-center transition-colors flex-shrink-0"
               >
                 <SendIcon />
               </button>
