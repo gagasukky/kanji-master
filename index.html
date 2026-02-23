@@ -69,64 +69,8 @@
         const delays = [1000, 2000, 4000, 8000, 16000];
         for (let i = 0; i < retries; i++) {
           try {
-            const response = await fetch(url, options);
-            if (!response.ok) {
-              const errorText = await response.text();
-              throw new Error(`APIエラー ${response.status}: ${errorText}`);
-            }
-            return await response.json();
-          } catch (error) {
-            // 400番台のエラー（キー間違いなど）は即終了
-            if (error.message.includes('APIエラー 400') || error.message.includes('APIエラー 403') || error.message.includes('APIエラー 404')) {
-              throw error;
-            }
-            if (i === retries - 1) throw error;
-            await new Promise(resolve => setTimeout(resolve, delays[i]));
-          }
-        }
-      };
-
-      const handleSendMessage = async (e) => {
-        e.preventDefault();
-        if (!input.trim()) return;
-
-        // 外部環境(タブレット等)でAPIキーが未設定の場合はエラーでお知らせする
-        if (!isPreviewEnv && !apiKey.trim()) {
-          alert("設定画面からAPIキーを入力してください。");
-          setIsSettingsOpen(true);
-          return;
-        }
-
-        const userText = input.trim();
-        setInput('');
-        const newMessages = [...messages, { role: 'user', text: userText }];
-        setMessages(newMessages);
-        setIsLoading(true);
-        setIsSettingsOpen(false);
-
-        const systemInstruction = `
-あなたは優しくてユーモアのある先生「漢字おぼえマスター」です。
-ユーザーが「覚えにくい漢字」や「〇〇という漢字」を入力したら、以下のステップで**${targetGrade}**の子供が理解できる言葉でアドバイスしてください。
-
-【重要：漢字の使用制限】
-- 解説文は、ターゲット層（${targetGrade}）が読める漢字のみを使用してください。
-- ターゲット層がまだ習っていないと思われる漢字は**絶対に**使用せず、必ず「ひらがな」で表記してください。
-- 「未就学児」が選択されている場合は、解説文はすべてひらがな・カタカナのみにしてください。
-- 迷った場合は、ひらがなを使用してください。
-
-1. **分解と意味**: 漢字をバラバラのパーツ（部首や構成要素）に分け、それぞれの意味を簡単に説明する。
-2. **ストーリー・語呂合わせ**: 分解したパーツを組み合わせて、頭に浮かびやすい面白いストーリーや語呂合わせを作る。
-3. **励まし**: 最後に優しく励ます。
-
-【ルール】
-- 難しい言葉は避け、具体的で身近な例えを使ってください。
-- 親しみやすい口調（〜だよ、〜だね）で、絵文字も適度に使って楽しく解説してください。
-- 答えは簡潔にまとめてください。
-        `;
-
-        try {
-          // 環境に応じてモデルとキーを切り替え
-          const modelName = isPreviewEnv ? 'gemini-2.5-flash-preview-09-2025' : 'gemini-1.5-flash';
+          // 環境に応じてモデルとキーを切り替え (モデルを最新の2.5に変更)
+          const modelName = isPreviewEnv ? 'gemini-2.5-flash-preview-09-2025' : 'gemini-2.5-flash';
           const finalKey = isPreviewEnv ? '' : apiKey.trim();
           const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${finalKey}`;
           
@@ -154,24 +98,32 @@
             body: JSON.stringify(payload)
           });
 
+          // 安全フィルター等でブロックされた場合の処理を追加
+          if (data.promptFeedback && data.promptFeedback.blockReason) {
+            throw new Error(`安全フィルターでブロックされました（理由: ${data.promptFeedback.blockReason}）`);
+          }
+
           const replyText = data.candidates?.[0]?.content?.parts?.[0]?.text;
           
           if (replyText) {
             setMessages(prev => [...prev, { role: 'model', text: replyText }]);
           } else {
-            throw new Error("応答データを解析できませんでした。");
+            const finishReason = data.candidates?.[0]?.finishReason;
+            throw new Error(`AIから返事がありませんでした（理由: ${finishReason || '不明'}）`);
           }
 
         } catch (error) {
           console.error("発生したエラーの詳細:", error);
           
-          // ★修正ポイント：エラーの詳細化
-          let errorMessage = 'ごめんね、ちょっと頭がこんらががっちゃったみたい。もう一回教えてくれるかな？（通信エラーが発生しました）';
+          // ★修正ポイント：何のエラーが起きているか画面にそのまま表示する
+          let errorMessage = `⚠️ エラーの正体: ${error.message}`;
           
-          if (error.message.includes('403') || error.message.includes('400')) {
-            errorMessage = '🔑 【エラー】APIキーが間違っているか、有効ではありません。設定の歯車マークから、コピーしたAPIキーに空白などが混ざっていないか確認してください。';
+          if (error.message.includes('403') || error.message.includes('400') || error.message.includes('API key not valid')) {
+            errorMessage = '🔑 【エラー】APIキーが間違っています。「AIza」から始まる正しいキーか確認してください。';
+          } else if (error.message.includes('404')) {
+            errorMessage = `🤖 【エラー】AIが見つかりません。通信エラー詳細: ${error.message}`;
           } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
-            errorMessage = '📡 【エラー】インターネットに繋がっていないか、通信がブロックされています。タブレットの通信環境を確認してください。';
+            errorMessage = '📡 【エラー】インターネットに繋がっていないか、通信がブロックされています。';
           }
 
           setMessages(prev => [...prev, { 
