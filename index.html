@@ -38,7 +38,7 @@
       const [input, setInput] = useState('');
       const [apiKey, setApiKey] = useState('');
       const [targetGrade, setTargetGrade] = useState('小学3年生');
-      const [isSettingsOpen, setIsSettingsOpen] = useState(true);
+      const [isSettingsOpen, setIsSettingsOpen] = useState(false);
       const [isLoading, setIsLoading] = useState(false);
       const messagesEndRef = useRef(null);
 
@@ -84,18 +84,14 @@
 
       const handleSendMessage = async (e) => {
         e.preventDefault();
-        if (!input.trim() || !apiKey) return;
-
-        if (isSettingsOpen) {
-          alert("先にAPIキーを設定してください。");
-          return;
-        }
+        if (!input.trim()) return;
 
         const userText = input.trim();
         setInput('');
         const newMessages = [...messages, { role: 'user', text: userText }];
         setMessages(newMessages);
         setIsLoading(true);
+        setIsSettingsOpen(false);
 
         const systemInstruction = `
 あなたは優しくてユーモアのある先生「漢字おぼえマスター」です。
@@ -118,9 +114,18 @@
         `;
 
         try {
-          const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+          const currentKey = apiKey.trim();
+          // APIキーが空(プレビュー環境)の場合は専用モデル、入力されている(外部利用)場合は一般公開モデルを使用
+          const modelName = currentKey ? 'gemini-1.5-flash' : 'gemini-2.5-flash-preview-09-2025';
+          const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${currentKey}`;
           
-          const historyContents = newMessages.map(msg => ({
+          // Gemini APIは会話履歴が必ず 'user' から始まる必要があるため、最初の挨拶(model)を除外して送信する
+          let apiMessages = [...newMessages];
+          if (apiMessages.length > 0 && apiMessages[0].role === 'model') {
+            apiMessages.shift();
+          }
+
+          const historyContents = apiMessages.map(msg => ({
             role: msg.role === 'user' ? 'user' : 'model',
             parts: [{ text: msg.text }]
           }));
@@ -191,7 +196,7 @@
                   placeholder="AIzaSy..."
                   className="w-full border border-gray-300 rounded p-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
                 />
-                <p className="text-[10px] text-gray-500 mt-1">※端末にのみ保存されます</p>
+                <p className="text-[10px] text-gray-500 mt-1">※この画面（プレビュー）で試す場合は空のままでOKです</p>
               </div>
 
               <div className="mb-4">
@@ -284,12 +289,12 @@
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="覚えたい漢字を入力"
-                disabled={isLoading || !apiKey}
+                disabled={isLoading}
                 className="flex-1 border-2 border-gray-200 rounded-full px-5 py-3 text-base focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-colors disabled:bg-gray-100"
               />
               <button
                 type="submit"
-                disabled={isLoading || !input.trim() || !apiKey}
+                disabled={isLoading || !input.trim()}
                 className="bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300 text-white rounded-full p-3 w-12 h-12 flex items-center justify-center transition-colors flex-shrink-0"
               >
                 <SendIcon />
