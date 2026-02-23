@@ -32,6 +32,9 @@
 
     // --- メインアプリ ---
     const App = () => {
+      // プレビュー環境(現在の練習コース)かどうかを自動で判別する
+      const isPreviewEnv = typeof __app_id !== 'undefined';
+
       const [messages, setMessages] = useState([
         { role: 'model', text: 'こんにちは！漢字おぼえマスターだよ！\n覚えられない漢字や、書き方がわからない漢字があったら教えてね。\n面白い覚え方を一緒に考えよう！' }
       ]);
@@ -86,6 +89,13 @@
         e.preventDefault();
         if (!input.trim()) return;
 
+        // 外部環境(タブレット等)でAPIキーが未設定の場合はエラーでお知らせする
+        if (!isPreviewEnv && !apiKey.trim()) {
+          alert("設定画面からAPIキーを入力してください。");
+          setIsSettingsOpen(true);
+          return;
+        }
+
         const userText = input.trim();
         setInput('');
         const newMessages = [...messages, { role: 'user', text: userText }];
@@ -114,10 +124,12 @@
         `;
 
         try {
-          const currentKey = apiKey.trim();
-          // APIキーが空(プレビュー環境)の場合は専用モデル、入力されている(外部利用)場合は一般公開モデルを使用
-          const modelName = currentKey ? 'gemini-1.5-flash' : 'gemini-2.5-flash-preview-09-2025';
-          const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${currentKey}`;
+          // プレビュー環境では必ず「専用モデルと空のキー」を強制的に使う
+          // 外部環境(タブレット等)では「入力されたAPIキーと一般モデル」を使う
+          const modelName = isPreviewEnv ? 'gemini-2.5-flash-preview-09-2025' : 'gemini-1.5-flash';
+          const finalKey = isPreviewEnv ? '' : apiKey.trim();
+
+          const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${finalKey}`;
           
           // Gemini APIは会話履歴が必ず 'user' から始まる必要があるため、最初の挨拶(model)を除外して送信する
           let apiMessages = [...newMessages];
@@ -196,7 +208,9 @@
                   placeholder="AIzaSy..."
                   className="w-full border border-gray-300 rounded p-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
                 />
-                <p className="text-[10px] text-gray-500 mt-1">※この画面（プレビュー）で試す場合は空のままでOKです</p>
+                <p className="text-[10px] text-gray-500 mt-1">
+                  {isPreviewEnv ? '※現在の画面(プレビュー)では入力不要です。キーが入っていても無視して安全に動きます。' : '※端末にのみ保存されます'}
+                </p>
               </div>
 
               <div className="mb-4">
