@@ -5,14 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>漢字おぼえマスター</title>
   
-  <!-- Tailwind CSS (デザイン用) -->
   <script src="https://cdn.tailwindcss.com"></script>
-  
-  <!-- ReactとReactDOM (アプリの動作基盤) -->
   <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-  
-  <!-- Babel (ブラウザ上でReactコードを翻訳するツール) -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
 <body class="bg-orange-50">
@@ -32,7 +27,7 @@
 
     // --- メインアプリ ---
     const App = () => {
-      // プレビュー環境(現在の練習コース)かどうかを自動で判別する
+      // プレビュー環境かどうかを判別
       const isPreviewEnv = typeof __app_id !== 'undefined';
 
       const [messages, setMessages] = useState([
@@ -50,7 +45,6 @@
         const savedGrade = localStorage.getItem('kanji_target_grade');
         if (savedKey) {
           setApiKey(savedKey);
-          setIsSettingsOpen(false);
         }
         if (savedGrade) {
           setTargetGrade(savedGrade);
@@ -64,9 +58,11 @@
       const handleSaveApiKey = () => {
         if (apiKey.trim()) {
           localStorage.setItem('gemini_api_key', apiKey.trim());
-          localStorage.setItem('kanji_target_grade', targetGrade);
-          setIsSettingsOpen(false);
+        } else {
+          localStorage.removeItem('gemini_api_key');
         }
+        localStorage.setItem('kanji_target_grade', targetGrade);
+        setIsSettingsOpen(false);
       };
 
       const fetchWithRetry = async (url, options, retries = 5) => {
@@ -80,7 +76,7 @@
             }
             return await response.json();
           } catch (error) {
-            // 400番台のエラー（キー間違いなど）はリトライしても直らないので即終了
+            // 400番台のエラー（キー間違いなど）は即終了
             if (error.message.includes('APIエラー 400') || error.message.includes('APIエラー 403') || error.message.includes('APIエラー 404')) {
               throw error;
             }
@@ -129,14 +125,12 @@
         `;
 
         try {
-          // プレビュー環境では必ず「専用モデルと空のキー」を強制的に使う
-          // 外部環境(タブレット等)では「入力されたAPIキーと一般モデル」を使う
+          // 環境に応じてモデルとキーを切り替え
           const modelName = isPreviewEnv ? 'gemini-2.5-flash-preview-09-2025' : 'gemini-1.5-flash';
           const finalKey = isPreviewEnv ? '' : apiKey.trim();
-
           const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${finalKey}`;
           
-          // Gemini APIは会話履歴が必ず 'user' から始まる必要があるため、最初の挨拶(model)を除外して送信する
+          // ★修正ポイント：最初の挨拶を除外
           let apiMessages = [...newMessages];
           if (apiMessages.length > 0 && apiMessages[0].role === 'model') {
             apiMessages.shift();
@@ -171,6 +165,7 @@
         } catch (error) {
           console.error("発生したエラーの詳細:", error);
           
+          // ★修正ポイント：エラーの詳細化
           let errorMessage = 'ごめんね、ちょっと頭がこんらががっちゃったみたい。もう一回教えてくれるかな？（通信エラーが発生しました）';
           
           if (error.message.includes('403') || error.message.includes('400')) {
@@ -190,7 +185,6 @@
 
       return (
         <div className="flex flex-col h-screen font-sans text-gray-800 relative">
-          {/* ヘッダー */}
           <header className="bg-orange-500 text-white p-4 shadow-md flex justify-between items-center z-10 sticky top-0">
             <div className="flex items-center gap-2">
               <BookOpenIcon />
@@ -205,7 +199,6 @@
             </button>
           </header>
 
-          {/* 設定パネル */}
           {isSettingsOpen && (
             <div className="absolute top-16 right-4 w-[calc(100%-2rem)] max-w-sm bg-white border-2 border-orange-200 rounded-lg shadow-2xl p-4 z-20">
               <div className="flex items-center gap-2 mb-3 text-orange-600 font-bold">
@@ -223,7 +216,7 @@
                   className="w-full border border-gray-300 rounded p-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
                 />
                 <p className="text-[10px] text-gray-500 mt-1">
-                  {isPreviewEnv ? '※現在の画面(プレビュー)では入力不要です。キーが入っていても無視して安全に動きます。' : '※端末にのみ保存されます'}
+                  {isPreviewEnv ? '※現在の画面(プレビュー)では入力不要です。' : '※端末にのみ保存されます'}
                 </p>
               </div>
 
@@ -254,7 +247,6 @@
             </div>
           )}
 
-          {/* チャットエリア */}
           <main className="flex-1 overflow-y-auto p-4 space-y-4 pb-24">
             {messages.map((msg, index) => (
               <div 
@@ -262,7 +254,6 @@
                 className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} max-w-4xl mx-auto`}
               >
                 <div className={`flex gap-3 max-w-[90%] ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
-                  
                   <div className="flex-shrink-0 mt-1">
                     {msg.role === 'user' ? (
                       <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white shadow">
@@ -274,7 +265,6 @@
                       </div>
                     )}
                   </div>
-
                   <div 
                     className={`p-3 rounded-2xl shadow-sm whitespace-pre-wrap ${
                       msg.role === 'user' 
@@ -306,7 +296,6 @@
             <div ref={messagesEndRef} />
           </main>
 
-          {/* 入力エリア */}
           <footer className="bg-white border-t border-gray-200 p-4 fixed bottom-0 left-0 right-0 w-full z-10">
             <form 
               onSubmit={handleSendMessage}
