@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>漢字おぼえマスター</title>
+  
+  <!-- Tailwind CSS (デザイン用) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- ReactとReactDOM (アプリの動作基盤) -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  
+  <!-- Babel (ブラウザ上でReactコードを翻訳するツール) -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body class="bg-orange-50">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+
+    // --- アイコン部品 ---
+    const BookOpenIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>;
+    const SettingsIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>;
+    const UserIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>;
+    const BotIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"></rect><circle cx="12" cy="5" r="2"></circle><path d="M12 7v4"></path><line x1="8" y1="16" x2="8" y2="16"></line><line x1="16" y1="16" x2="16" y2="16"></line></svg>;
+    const SendIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>;
+    const KeyIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path></svg>;
+    const LoaderIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin text-orange-500"><line x1="12" y1="2" x2="12" y2="6"></line><line x1="12" y1="18" x2="12" y2="22"></line><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line><line x1="2" y1="12" x2="6" y2="12"></line><line x1="18" y1="12" x2="22" y2="12"></line><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line></svg>;
+
+    // --- メインアプリ ---
+    const App = () => {
+      const [messages, setMessages] = useState([
+        { role: 'model', text: 'こんにちは！漢字おぼえマスターだよ！\n覚えられない漢字や、書き方がわからない漢字があったら教えてね。\n面白い覚え方を一緒に考えよう！' }
+      ]);
+      const [input, setInput] = useState('');
+      const [apiKey, setApiKey] = useState('');
+      const [targetGrade, setTargetGrade] = useState('小学3年生');
+      const [isSettingsOpen, setIsSettingsOpen] = useState(true);
+      const [isLoading, setIsLoading] = useState(false);
+      const messagesEndRef = useRef(null);
+
+      useEffect(() => {
+        const savedKey = localStorage.getItem('gemini_api_key');
+        const savedGrade = localStorage.getItem('kanji_target_grade');
+        if (savedKey) {
+          setApiKey(savedKey);
+          setIsSettingsOpen(false);
+        }
+        if (savedGrade) {
+          setTargetGrade(savedGrade);
+        }
+      }, []);
+
+      useEffect(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, [messages]);
+
+      const handleSaveApiKey = () => {
+        if (apiKey.trim()) {
+          localStorage.setItem('gemini_api_key', apiKey.trim());
+          localStorage.setItem('kanji_target_grade', targetGrade);
+          setIsSettingsOpen(false);
+        }
+      };
+
+      const fetchWithRetry = async (url, options, retries = 5) => {
+        const delays = [1000, 2000, 4000, 8000, 16000];
+        for (let i = 0; i < retries; i++) {
+          try {
+            const response = await fetch(url, options);
+            if (!response.ok) {
+              throw new Error(`APIリクエストエラー: ${response.status}`);
+            }
+            return await response.json();
+          } catch (error) {
+            if (i === retries - 1) throw error;
+            await new Promise(resolve => setTimeout(resolve, delays[i]));
+          }
+        }
+      };
+
+      const handleSendMessage = async (e) => {
+        e.preventDefault();
+        if (!input.trim() || !apiKey) return;
+
+        if (isSettingsOpen) {
+          alert("先にAPIキーを設定してください。");
+          return;
+        }
+
+        const userText = input.trim();
+        setInput('');
+        const newMessages = [...messages, { role: 'user', text: userText }];
+        setMessages(newMessages);
+        setIsLoading(true);
+
+        const systemInstruction = `
+あなたは優しくてユーモアのある先生「漢字おぼえマスター」です。
+ユーザーが「覚えにくい漢字」や「〇〇という漢字」を入力したら、以下のステップで**${targetGrade}**の子供が理解できる言葉でアドバイスしてください。
+
+【重要：漢字の使用制限】
+- 解説文は、ターゲット層（${targetGrade}）が読める漢字のみを使用してください。
+- ターゲット層がまだ習っていないと思われる漢字は**絶対に**使用せず、必ず「ひらがな」で表記してください。
+- 「未就学児」が選択されている場合は、解説文はすべてひらがな・カタカナのみにしてください。
+- 迷った場合は、ひらがなを使用してください。
+
+1. **分解と意味**: 漢字をバラバラのパーツ（部首や構成要素）に分け、それぞれの意味を簡単に説明する。
+2. **ストーリー・語呂合わせ**: 分解したパーツを組み合わせて、頭に浮かびやすい面白いストーリーや語呂合わせを作る。
+3. **励まし**: 最後に優しく励ます。
+
+【ルール】
+- 難しい言葉は避け、具体的で身近な例えを使ってください。
+- 親しみやすい口調（〜だよ、〜だね）で、絵文字も適度に使って楽しく解説してください。
+- 答えは簡潔にまとめてください。
+        `;
+
+        try {
+          const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+          
+          const historyContents = newMessages.map(msg => ({
+            role: msg.role === 'user' ? 'user' : 'model',
+            parts: [{ text: msg.text }]
+          }));
+
+          const payload = {
+            contents: historyContents,
+            systemInstruction: {
+              parts: [{ text: systemInstruction }]
+            }
+          };
+
+          const data = await fetchWithRetry(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+
+          const replyText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+          
+          if (replyText) {
+            setMessages(prev => [...prev, { role: 'model', text: replyText }]);
+          } else {
+            throw new Error("応答データを解析できませんでした。");
+          }
+
+        } catch (error) {
+          console.error(error);
+          setMessages(prev => [...prev, { 
+            role: 'model', 
+            text: 'ごめんね、ちょっと頭がこんらががっちゃったみたい。もう一回教えてくれるかな？（通信エラーが発生しました）' 
+          }]);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+
+      return (
+        <div className="flex flex-col h-screen font-sans text-gray-800 relative">
+          {/* ヘッダー */}
+          <header className="bg-orange-500 text-white p-4 shadow-md flex justify-between items-center z-10 sticky top-0">
+            <div className="flex items-center gap-2">
+              <BookOpenIcon />
+              <h1 className="text-xl font-bold">漢字おぼえマスター</h1>
+            </div>
+            <button 
+              onClick={() => setIsSettingsOpen(!isSettingsOpen)}
+              className="p-2 hover:bg-orange-600 rounded-full transition-colors"
+              title="設定"
+            >
+              <SettingsIcon />
+            </button>
+          </header>
+
+          {/* 設定パネル */}
+          {isSettingsOpen && (
+            <div className="absolute top-16 right-4 w-[calc(100%-2rem)] max-w-sm bg-white border-2 border-orange-200 rounded-lg shadow-2xl p-4 z-20">
+              <div className="flex items-center gap-2 mb-3 text-orange-600 font-bold">
+                <KeyIcon />
+                <h2>設定</h2>
+              </div>
+              
+              <div className="mb-4">
+                <label className="block text-xs text-gray-700 font-bold mb-1">APIキー</label>
+                <input
+                  type="password"
+                  value={apiKey}
+                  onChange={(e) => setApiKey(e.target.value)}
+                  placeholder="AIzaSy..."
+                  className="w-full border border-gray-300 rounded p-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                />
+                <p className="text-[10px] text-gray-500 mt-1">※端末にのみ保存されます</p>
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-xs text-gray-700 font-bold mb-1">対象学年（漢字のレベル）</label>
+                <select
+                  value={targetGrade}
+                  onChange={(e) => setTargetGrade(e.target.value)}
+                  className="w-full border border-gray-300 rounded p-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                >
+                  <option value="未就学児（すべてひらがな）">未就学児（すべてひらがな）</option>
+                  <option value="小学1年生">小学1年生</option>
+                  <option value="小学2年生">小学2年生</option>
+                  <option value="小学3年生">小学3年生</option>
+                  <option value="小学4年生">小学4年生</option>
+                  <option value="小学5年生">小学5年生</option>
+                  <option value="小学6年生">小学6年生</option>
+                  <option value="中学生以上（制限なし）">中学生以上（制限なし）</option>
+                </select>
+              </div>
+
+              <button 
+                onClick={handleSaveApiKey}
+                className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded transition-colors text-sm"
+              >
+                保存して始める
+              </button>
+            </div>
+          )}
+
+          {/* チャットエリア */}
+          <main className="flex-1 overflow-y-auto p-4 space-y-4 pb-24">
+            {messages.map((msg, index) => (
+              <div 
+                key={index} 
+                className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} max-w-4xl mx-auto`}
+              >
+                <div className={`flex gap-3 max-w-[90%] ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
+                  
+                  <div className="flex-shrink-0 mt-1">
+                    {msg.role === 'user' ? (
+                      <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white shadow">
+                        <UserIcon />
+                      </div>
+                    ) : (
+                      <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center text-white shadow">
+                        <BotIcon />
+                      </div>
+                    )}
+                  </div>
+
+                  <div 
+                    className={`p-3 rounded-2xl shadow-sm whitespace-pre-wrap ${
+                      msg.role === 'user' 
+                        ? 'bg-blue-100 text-blue-900 rounded-tr-sm' 
+                        : 'bg-white border-2 border-orange-100 text-gray-800 rounded-tl-sm'
+                    }`}
+                  >
+                    {msg.text}
+                  </div>
+                </div>
+              </div>
+            ))}
+            
+            {isLoading && (
+              <div className="flex justify-start max-w-4xl mx-auto">
+                 <div className="flex gap-3 max-w-[85%] flex-row">
+                    <div className="flex-shrink-0 mt-1">
+                      <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center text-white shadow">
+                        <BotIcon />
+                      </div>
+                    </div>
+                    <div className="p-4 rounded-2xl bg-white border-2 border-orange-100 rounded-tl-sm flex items-center gap-2">
+                      <LoaderIcon />
+                      <span className="text-gray-500 text-sm font-bold">考え中...</span>
+                    </div>
+                 </div>
+              </div>
+            )}
+            <div ref={messagesEndRef} />
+          </main>
+
+          {/* 入力エリア */}
+          <footer className="bg-white border-t border-gray-200 p-4 fixed bottom-0 left-0 right-0 w-full z-10">
+            <form 
+              onSubmit={handleSendMessage}
+              className="max-w-4xl mx-auto flex gap-2"
+            >
+              <input
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="覚えたい漢字を入力"
+                disabled={isLoading || !apiKey}
+                className="flex-1 border-2 border-gray-200 rounded-full px-5 py-3 text-base focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-colors disabled:bg-gray-100"
+              />
+              <button
+                type="submit"
+                disabled={isLoading || !input.trim() || !apiKey}
+                className="bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300 text-white rounded-full p-3 w-12 h-12 flex items-center justify-center transition-colors flex-shrink-0"
+              >
+                <SendIcon />
+              </button>
+            </form>
+          </footer>
+        </div>
+      );
+    };
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
