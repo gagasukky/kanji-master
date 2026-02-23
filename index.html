@@ -75,10 +75,15 @@
           try {
             const response = await fetch(url, options);
             if (!response.ok) {
-              throw new Error(`APIリクエストエラー: ${response.status}`);
+              const errorText = await response.text();
+              throw new Error(`APIエラー ${response.status}: ${errorText}`);
             }
             return await response.json();
           } catch (error) {
+            // 400番台のエラー（キー間違いなど）はリトライしても直らないので即終了
+            if (error.message.includes('APIエラー 400') || error.message.includes('APIエラー 403') || error.message.includes('APIエラー 404')) {
+              throw error;
+            }
             if (i === retries - 1) throw error;
             await new Promise(resolve => setTimeout(resolve, delays[i]));
           }
@@ -164,10 +169,19 @@
           }
 
         } catch (error) {
-          console.error(error);
+          console.error("発生したエラーの詳細:", error);
+          
+          let errorMessage = 'ごめんね、ちょっと頭がこんらががっちゃったみたい。もう一回教えてくれるかな？（通信エラーが発生しました）';
+          
+          if (error.message.includes('403') || error.message.includes('400')) {
+            errorMessage = '🔑 【エラー】APIキーが間違っているか、有効ではありません。設定の歯車マークから、コピーしたAPIキーに空白などが混ざっていないか確認してください。';
+          } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+            errorMessage = '📡 【エラー】インターネットに繋がっていないか、通信がブロックされています。タブレットの通信環境を確認してください。';
+          }
+
           setMessages(prev => [...prev, { 
             role: 'model', 
-            text: 'ごめんね、ちょっと頭がこんらががっちゃったみたい。もう一回教えてくれるかな？（通信エラーが発生しました）' 
+            text: errorMessage 
           }]);
         } finally {
           setIsLoading(false);
